@@ -75,16 +75,6 @@
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     }
 
-    .subcard {
-      margin-top: 16px;
-      background: #0f1622;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
     h1 {
       margin: 0 0 10px 0;
       font-size: 1.8rem;
@@ -226,11 +216,14 @@
     <!-- HOME -->
     <section id="home" class="card">
       <div class="welcome">Welcome to the Saber Simulator Calculator!</div>
+    </section>
+
+    <section class="card">
       <div class="info-box">
         Latest update: Added Dailies/Dungeon calculation tools and improved formatting for large values.
       </div>
 
-      <div class="subcard">
+      <div class="info-box" style="margin-top: 12px;">
         Hey Welcome to this small Calculation website, you can use this to calculate various things, im trying to help out the community because this is what I love to do! I hope we can bring this game one day to a better and greater state again together, the devs may be very lazy and we wont get a big update in the near future, but beside that, most of us still here or are new to the game, so lets enjoy our time!
         <br><br>
         If you wanna checkout here is also my Youtube Channel down below linked I post Videos about Saber Simulator!
@@ -294,7 +287,7 @@
       </div>
     </section>
 
-    <!-- PET INDEX (placeholder) -->
+    <!-- PET INDEX -->
     <section id="pet-index" class="card hidden">
       <h1>Pet Index</h1>
       <div class="info-box">Coming soon: Pet stats calculator and rarity scaling.</div>
@@ -363,13 +356,11 @@
     // Tabs
     const tabs = document.querySelectorAll(".tab");
     const sections = ["home", "dungeon", "pet-index", "dailies"].map(id => document.getElementById(id));
-
     function showSection(id) {
       sections.forEach(s => s.classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
       tabs.forEach(t => t.classList.toggle("active", t.dataset.target === id));
     }
-
     tabs.forEach(t => t.addEventListener("click", () => showSection(t.dataset.target)));
     showSection("home");
 
