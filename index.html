@@ -1248,7 +1248,7 @@
 
     function renderRarityTable(counts, totalEggs){
       const rows = RARITY_LIST.map(r => {
-        const chance = totalEggs > 0 ? counts[r.key] / totalEggs : 0;
+        const chance = computeRarityProbabilities(window.currentLuck || 1)[r.key];
         const count = roundEvenDown(counts[r.key]);
         return `<tr><td>${r.label}</td><td>${formatPercent(chance)}</td><td>${count.toLocaleString()}</td></tr>`;
       }).join("");
