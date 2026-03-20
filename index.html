@@ -193,6 +193,22 @@
 
     .note strong { color: #ffffff; }
 
+    .action-btn {
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      background: rgba(111, 225, 255, 0.12);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .split {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -364,6 +380,8 @@
           <br><br>
           Added Dailies/Dungeon calculation tools into their tabs, added a pet index with the 1st 141 stat pets from the Index which currently contains 2228 Pets! In the Future will add more pets I will work my way up from the bottom side of the stat pets to the top up until the newest updates, I will give the website weekly updates and potentionally add more features, for example a calculator for how much strength you gain per hour/day depending on certain values or an element grinder calculator If I can figure that out, but more in the upcoming Updates!
           <br><br>
+          I also added a new tab, Hatching Calculator with various feature, next I will be adding the newest pet + search bar to the pet tab! And if anyone wants to support me, I will also add a small dono link down below, where if you wanna support me putting in so much work into this project, then feel free to donate like 1$ or whatever, I appreciate the support anyways, and I will keep up my work no matter what.
+          <br><br>
         </div>
 
         <div class="info-box" style="margin-top: 12px;">
@@ -446,6 +464,7 @@
                 <button class="toggle-btn active" data-value="deterministic">Deterministic</button>
                 <button class="toggle-btn" data-value="simulation">Simulation</button>
               </div>
+              <button id="runSimulation" class="action-btn hidden" type="button">Run Simulation</button>
             </div>
           </div>
           <div class="input-row">
@@ -739,9 +758,54 @@
 
     const SIM_CHUNK_SIZE = 20000;
     let hatchRunId = 0;
+    let simulationDirty = false;
+    let hatchScheduled = false;
 
     function nextFrame(){
       return new Promise(resolve => requestAnimationFrame(resolve));
+    }
+
+    function scheduleHatchUpdate(){
+      if(hatchScheduled) return;
+      hatchScheduled = true;
+      requestAnimationFrame(() => {
+        hatchScheduled = false;
+        updateHatch();
+      });
+    }
+
+    function updateHatchNote(running=false){
+      const resultMode = getResultMode();
+      const noteEl = document.getElementById("hatchNote");
+      const runBtn = document.getElementById("runSimulation");
+      if(runBtn){
+        runBtn.classList.toggle("hidden", resultMode !== "simulation");
+        if(resultMode !== "simulation"){
+          runBtn.disabled = false;
+          runBtn.textContent = "Run Simulation";
+        }
+      }
+
+      if(resultMode === "simulation"){
+        if(running){
+          noteEl.textContent = "Running simulation...";
+        } else if(simulationDirty){
+          noteEl.textContent = "Inputs changed. Click Run Simulation to update results.";
+        } else {
+          noteEl.textContent = "Simulation mode adds randomness. Click Run Simulation to calculate.";
+        }
+      } else {
+        noteEl.textContent = "Deterministic mode uses expected averages based on your inputs.";
+      }
+    }
+
+    function handleInputChange(){
+      if(getResultMode() === "simulation"){
+        simulationDirty = true;
+        updateHatchNote();
+        return;
+      }
+      scheduleHatchUpdate();
     }
 
 
@@ -1302,10 +1366,26 @@
       `;
     }
 
-    async function updateHatch(){
+    async function updateHatch(forceSimulation=false){
       const runId = ++hatchRunId;
       const calcMode = getCalcMode();
       const resultMode = getResultMode();
+      const isSim = resultMode === "simulation";
+
+      if(isSim && !forceSimulation){
+        updateHatchNote();
+        return;
+      }
+
+      if(isSim){
+        simulationDirty = false;
+        const runBtn = document.getElementById("runSimulation");
+        if(runBtn){
+          runBtn.disabled = true;
+          runBtn.textContent = "Running...";
+        }
+        updateHatchNote(true);
+      }
       const same = document.getElementById("sameAccounts").checked;
       const accountCount = Math.max(1, Number(document.getElementById("accountCount").value || 1));
 
@@ -1356,10 +1436,14 @@
       document.getElementById("summaryTime").textContent = formatDurationSeconds(totalTime);
       document.getElementById("summaryPerAccount").textContent = formatNumber(eggsPerAccount, 2);
 
-      const note = resultMode === "simulation"
-        ? "Simulation mode adds randomness. Results can change every time you calculate."
-        : "Deterministic mode uses expected averages based on your inputs.";
-      document.getElementById("hatchNote").textContent = note;
+      if(isSim){
+        const runBtn = document.getElementById("runSimulation");
+        if(runBtn){
+          runBtn.disabled = false;
+          runBtn.textContent = "Run Simulation";
+        }
+      }
+      updateHatchNote(false);
 
       document.getElementById("rarityTableWrap").innerHTML = renderRarityTable(totalRarityCounts, totalEggs, resultMode);
       document.getElementById("variantTableWrap").innerHTML = renderVariantTable(totalVariantCounts, resultMode);
@@ -1380,28 +1464,41 @@
       const mode = getCalcMode();
       document.getElementById("timeInputs").classList.toggle("hidden", mode !== "time");
       document.getElementById("eggInputs").classList.toggle("hidden", mode !== "eggs");
-      updateHatch();
+      handleInputChange();
     });
 
-    setupToggleGroup("resultMode", updateHatch);
+    setupToggleGroup("resultMode", () => {
+      simulationDirty = true;
+      updateHatchNote();
+      if(getResultMode() !== "simulation"){
+        scheduleHatchUpdate();
+      }
+    });
 
     document.getElementById("accountCount").addEventListener("input", () => {
       renderAccounts();
-      updateHatch();
+      handleInputChange();
     });
 
     document.getElementById("sameAccounts").addEventListener("change", () => {
       renderAccounts();
-      updateHatch();
+      handleInputChange();
     });
 
-    document.getElementById("timeInputs").addEventListener("input", updateHatch);
-    document.getElementById("eggInputs").addEventListener("input", updateHatch);
+    document.getElementById("timeInputs").addEventListener("input", handleInputChange);
+    document.getElementById("eggInputs").addEventListener("input", handleInputChange);
 
-    document.getElementById("accountsContainer").addEventListener("input", updateHatch);
-    document.getElementById("accountsContainer").addEventListener("change", updateHatch);
+    document.getElementById("accountsContainer").addEventListener("input", handleInputChange);
+    document.getElementById("accountsContainer").addEventListener("change", handleInputChange);
+
+    document.getElementById("runSimulation").addEventListener("click", () => {
+      if(getResultMode() === "simulation"){
+        updateHatch(true);
+      }
+    });
 
     renderAccounts();
+    updateHatchNote();
     updateHatch();
 
     // Dailies
