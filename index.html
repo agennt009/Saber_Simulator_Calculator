@@ -692,11 +692,27 @@
       return Math.min(max, Math.max(min, val));
     }
 
+    function rand(){
+      if(typeof crypto !== "undefined" && crypto.getRandomValues){
+        const buf = new Uint32Array(1);
+        crypto.getRandomValues(buf);
+        return buf[0] / 0x100000000;
+      }
+      return Math.random();
+    }
+
     function roundEvenDown(val){
       if(!isFinite(val) || val <= 0) return 0;
       let f = Math.floor(val);
       if(f % 2 !== 0) f -= 1;
       return Math.max(0, f);
+    }
+
+    function displayCount(val, resultMode){
+      if(!isFinite(val) || val <= 0) return 0;
+      const base = Math.floor(val);
+      const frac = val - base;
+      return frac >= 0.9 ? base + 1 : base;
     }
 
     function formatNumber(val, decimals=2){
@@ -1139,7 +1155,7 @@
     function sampleChoice(weights){
       const total = weights.reduce((a,b)=>a+b,0);
       if(total <= 0) return 0;
-      let r = (Math.random() + (Math.random() * 0.0000001)) * total;
+      let r = rand() * total;
       for(let i=0;i<weights.length;i++){
         r -= weights[i];
         if(r <= 0) return i;
@@ -1159,21 +1175,22 @@
         totalTime = computeTimeForEggs(account, eggsPerSlot);
       }
 
-      let simEggs = Math.floor(eggsPerSlot);
-      const frac = eggsPerSlot - simEggs;
-      if(Math.random() < frac) simEggs += 1;
+      const totalEggsFloat = eggsPerSlot * account.eggsPerHatch;
+      let simEggs = Math.floor(totalEggsFloat);
+      const frac = totalEggsFloat - simEggs;
+      if(rand() < frac) simEggs += 1;
 
       const luckCounts = {
-        godly: Math.floor((account.luckCharms.godly || 0) / account.eggsPerHatch),
-        ultra: Math.floor((account.luckCharms.ultra || 0) / account.eggsPerHatch),
-        super: Math.floor((account.luckCharms.super || 0) / account.eggsPerHatch),
-        luck: Math.floor((account.luckCharms.luck || 0) / account.eggsPerHatch)
+        godly: Math.floor(account.luckCharms.godly || 0),
+        ultra: Math.floor(account.luckCharms.ultra || 0),
+        super: Math.floor(account.luckCharms.super || 0),
+        luck: Math.floor(account.luckCharms.luck || 0)
       };
 
       const rarityCharmCounts = {
-        shiny: Math.floor((account.rarityCharms.shiny || 0) / account.eggsPerHatch),
-        rainbow: Math.floor((account.rarityCharms.rainbow || 0) / account.eggsPerHatch),
-        void: Math.floor((account.rarityCharms.void || 0) / account.eggsPerHatch)
+        shiny: Math.floor(account.rarityCharms.shiny || 0),
+        rainbow: Math.floor(account.rarityCharms.rainbow || 0),
+        void: Math.floor(account.rarityCharms.void || 0)
       };
 
       const pity = { shiny: 0, rainbow: 0, void: 0 };
@@ -1216,9 +1233,9 @@
         } else if(active.shiny && pity.shiny >= 25){
           variant = "shiny"; pity.shiny = 0;
         } else {
-          const hitVoid = active.void && Math.random() < 0.05;
-          const hitRainbow = active.rainbow && Math.random() < 0.05;
-          const hitShiny = active.shiny && Math.random() < 0.05;
+          const hitVoid = active.void && rand() < 0.05;
+          const hitRainbow = active.rainbow && rand() < 0.05;
+          const hitShiny = active.shiny && rand() < 0.05;
 
           if(hitVoid){ variant = "void"; pity.void = 0; }
           else if(hitRainbow){ variant = "rainbow"; pity.rainbow = 0; }
@@ -1236,19 +1253,15 @@
         variantCounts[rarityKey][variant] += 1;
       }
 
-      const totalEggs = simEggs * account.eggsPerHatch;
-      Object.keys(rarityCounts).forEach(k => { rarityCounts[k] *= account.eggsPerHatch; });
-      Object.keys(variantCounts).forEach(k => {
-        Object.keys(variantCounts[k]).forEach(v => { variantCounts[k][v] *= account.eggsPerHatch; });
-      });
+      const totalEggs = simEggs;
 
       return { totalEggs, totalTime, rarityCounts, variantCounts, variantProbs: VARIANT_BASE };
     }
 
-    function renderRarityTable(counts, totalEggs){
+    function renderRarityTable(counts, totalEggs, resultMode){
       const rows = RARITY_LIST.map(r => {
         const chance = computeRarityProbabilities(window.currentLuck || 1)[r.key];
-        const count = roundEvenDown(counts[r.key]);
+        const count = displayCount(counts[r.key], resultMode);
         return `<tr><td>${r.label}</td><td>${formatPercent(chance)}</td><td>${count.toLocaleString()}</td></tr>`;
       }).join("");
       return `
@@ -1259,14 +1272,14 @@
       `;
     }
 
-    function renderVariantTable(variantCounts){
+    function renderVariantTable(variantCounts, resultMode){
       const rows = RARITY_LIST.map(r => {
         const v = variantCounts[r.key];
-        const n = roundEvenDown(v.normal);
-        const g = roundEvenDown(v.golden);
-        const s = roundEvenDown(v.shiny);
-        const rb = roundEvenDown(v.rainbow);
-        const vd = roundEvenDown(v.void);
+        const n = displayCount(v.normal, resultMode);
+        const g = displayCount(v.golden, resultMode);
+        const s = displayCount(v.shiny, resultMode);
+        const rb = displayCount(v.rainbow, resultMode);
+        const vd = displayCount(v.void, resultMode);
         return `<tr><td>${r.label}</td><td>${n.toLocaleString()}</td><td>${g.toLocaleString()}</td><td>${s.toLocaleString()}</td><td>${rb.toLocaleString()}</td><td>${vd.toLocaleString()}</td></tr>`;
       }).join("");
       return `
@@ -1333,8 +1346,8 @@
         : "Deterministic mode uses expected averages based on your inputs.";
       document.getElementById("hatchNote").textContent = note;
 
-      document.getElementById("rarityTableWrap").innerHTML = renderRarityTable(totalRarityCounts, totalEggs);
-      document.getElementById("variantTableWrap").innerHTML = renderVariantTable(totalVariantCounts);
+      document.getElementById("rarityTableWrap").innerHTML = renderRarityTable(totalRarityCounts, totalEggs, resultMode);
+      document.getElementById("variantTableWrap").innerHTML = renderVariantTable(totalVariantCounts, resultMode);
     }
 
     function setupToggleGroup(id, onChange){
