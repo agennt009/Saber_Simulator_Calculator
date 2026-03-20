@@ -194,6 +194,62 @@
 
     .note strong { color: #ffffff; }
 
+    .important-note {
+      margin-top: 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .countdown-card {
+      background:
+        radial-gradient(900px 220px at 50% -30%, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.04) 35%, rgba(255,255,255,0) 75%),
+        linear-gradient(180deg, #141f30 0%, #0f1622 100%);
+    }
+
+    .countdown-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #d8e6ff;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .countdown-value {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      align-items: end;
+      text-align: center;
+    }
+
+    .countdown-num {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 6vw, 4.2rem);
+      font-style: italic;
+      line-height: 1;
+      letter-spacing: 0.03em;
+      color: #f2f7ff;
+      text-shadow: 0 0 18px rgba(180, 220, 255, 0.18);
+    }
+
+    .countdown-label {
+      margin-top: 6px;
+      font-size: 0.88rem;
+      color: #acc4e1;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .countdown-foot {
+      margin-top: 12px;
+      text-align: center;
+      color: #9fb6d1;
+      font-size: 0.9rem;
+    }
+
     .action-btn {
       margin-top: 8px;
       padding: 10px 14px;
@@ -375,6 +431,29 @@
         <div class="welcome">Welcome to the Saber Simulator Calculator!</div>
       </div>
 
+      <div class="card countdown-card">
+        <div class="countdown-title">Weekly Update Countdown</div>
+        <div class="countdown-value">
+          <div>
+            <div class="countdown-num" id="countdownDays">00</div>
+            <div class="countdown-label">Days</div>
+          </div>
+          <div>
+            <div class="countdown-num" id="countdownHours">00</div>
+            <div class="countdown-label">Hr</div>
+          </div>
+          <div>
+            <div class="countdown-num" id="countdownMinutes">00</div>
+            <div class="countdown-label">Min</div>
+          </div>
+          <div>
+            <div class="countdown-num" id="countdownSeconds">00</div>
+            <div class="countdown-label">Sec</div>
+          </div>
+        </div>
+        <div class="countdown-foot">Resets every Friday at 06:00 UTC</div>
+      </div>
+
       <div class="card">
         <div class="info-box">
           <strong>Latest update:</strong>
@@ -550,7 +629,7 @@
 
     <!-- DAILIES -->
     <section id="dailies" class="card hidden">
-      <h1>Dailies/Dungeon Calculation</h1>
+      <h1>Dailies</h1>
       <div class="split">
         <section>
           <div class="section-title">Dailies Calculator</div>
@@ -602,6 +681,7 @@
                 <div class="value" id="goalTime">0 hours</div>
               </div>
             </div>
+            <div class="important-note">*NOTE: PLEASE Input Numbers like this example 123 kbe and not 123 kBE it is important that the notation is in fully lowercased letters*</div>
           </div>
         </section>
       </div>
@@ -619,6 +699,53 @@
     }
     tabs.forEach(t=>t.addEventListener("click",()=>showSection(t.dataset.target)));
     showSection("home");
+
+    // Weekly UTC Countdown (resets every Friday 06:00 UTC)
+    function getNextFridaySixUTC(now){
+      const current = now || new Date();
+      const dayUTC = current.getUTCDay(); // 0=Sun ... 5=Fri
+      const target = new Date(Date.UTC(
+        current.getUTCFullYear(),
+        current.getUTCMonth(),
+        current.getUTCDate(),
+        6, 0, 0, 0
+      ));
+
+      let addDays = (5 - dayUTC + 7) % 7;
+      target.setUTCDate(target.getUTCDate() + addDays);
+      if(target.getTime() <= current.getTime()){
+        target.setUTCDate(target.getUTCDate() + 7);
+      }
+      return target;
+    }
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function updateWeeklyCountdown(){
+      const daysEl = document.getElementById("countdownDays");
+      const hoursEl = document.getElementById("countdownHours");
+      const minutesEl = document.getElementById("countdownMinutes");
+      const secondsEl = document.getElementById("countdownSeconds");
+      if(!daysEl || !hoursEl || !minutesEl || !secondsEl) return;
+
+      const now = new Date();
+      const target = getNextFridaySixUTC(now);
+      let diff = Math.floor((target.getTime() - now.getTime()) / 1000);
+      if(diff < 0) diff = 0;
+
+      const days = Math.floor(diff / 86400); diff -= days * 86400;
+      const hours = Math.floor(diff / 3600); diff -= hours * 3600;
+      const minutes = Math.floor(diff / 60); diff -= minutes * 60;
+      const seconds = diff;
+
+      daysEl.textContent = String(days);
+      hoursEl.textContent = pad2(hours);
+      minutesEl.textContent = pad2(minutes);
+      secondsEl.textContent = pad2(seconds);
+    }
+
+    updateWeeklyCountdown();
+    setInterval(updateWeeklyCountdown, 1000);
 
     // Dungeon
     const difficultyData = {
