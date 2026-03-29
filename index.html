@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -779,19 +778,24 @@
     tabs.forEach(t=>t.addEventListener("click",()=>showSection(t.dataset.target)));
     showSection("home");
 
-    // Home changelog: keep newest items first, UI shows only top 3 (English only)
+    // Home changelog: keep newest items first, UI shows only top 10 (English only)
     const homeChangeLog = [
       { date: "2026-03-29", text: "Added Easter Egg1 to Pet Index with all pets and stats, including event multipliers." },
       { date: "2026-03-29", text: "Added Event Multi stat support in pet cards with Easter icon and version/level scaling." },
       { date: "2026-03-29", text: "Pet Index now uses compact stat formatting (K/M/B), bigger egg image, and smaller pet cards." },
       { date: "2026-03-28", text: "Fixed Hatch Calculator simulation flow so Run Simulation works reliably in both From Time and From Eggs modes." },
-      { date: "2026-03-28", text: "Added Weekly Update Countdown on Home with automatic weekly reset every Friday at 18:00 UTC." }
+      { date: "2026-03-28", text: "Added Weekly Update Countdown on Home with automatic weekly reset every Friday at 19:00 UTC." },
+      { date: "2026-03-28", text: "Added Daily Cooldown (hh:mm:ss) support to Goal Time in the Dailies calculator." },
+      { date: "2026-03-27", text: "Added Home countdown visual redesign and global blurred background image layer." },
+      { date: "2026-03-27", text: "Added live Pet Search in Pet Index for faster name filtering." },
+      { date: "2026-03-26", text: "Introduced deterministic vs simulation modes in Hatch Calculator with dedicated run button." },
+      { date: "2026-03-26", text: "Expanded Hatch Calculator with multi-account settings, gamepass toggles, and charm controls." }
     ];
 
     function renderLatestUpdates(){
       const list=document.getElementById("latestUpdateList");
       if(!list) return;
-      const latest=homeChangeLog.slice(0,3);
+      const latest=homeChangeLog.slice(0,10);
       list.innerHTML=latest.map(item=>`<li><span class="latest-date">${item.date}</span>${item.text}</li>`).join("");
     }
     renderLatestUpdates();
@@ -1935,6 +1939,70 @@
     const versionMultipliers={normal:1,golden:1.5,shiny:2,rainbow:2.5,void:3};
     const eggCatalog = [
       {
+        eggName: "Matrix Egg",
+        eggImage: "assets/Matrix Egg.png",
+        pets: [
+          { name:"USB Stick Guy", coin:755050, strength:755050, crowns:46676, rarity:"one star" },
+          { name:"Super Hacker", coin:887180, strength:887180, crowns:48076, rarity:"two star" },
+          { name:"Electric Core", coin:1040000, strength:1040000, crowns:49476, rarity:"three star" },
+          { name:"Pack of Batteries", coin:1220000, strength:1220000, crowns:50876, rarity:"four star" },
+          { name:"TV Head", coin:1440000, strength:1440000, crowns:52276, rarity:"four star 2nd" },
+          { name:"Server Core", coin:1690000, strength:1690000, crowns:53676, rarity:"five star" },
+          { name:"Neurobit", coin:2870000, strength:2870000, crowns:350870, rarity:"one moon" },
+          { name:"Matrix Mainframe", coin:10760000, strength:10760000, crowns:699160, rarity:"two moon" },
+          { name:"Cyberspace", coin:13620000, strength:13620000, crowns:885620, rarity:"three moon" },
+          { name:"Kitsune", coin:21350000, strength:21350000, crowns:1390000, rarity:"secret" }
+        ]
+      },
+      {
+        eggName: "Fortune Egg",
+        eggImage: "assets/Fortune Egg.png",
+        pets: [
+          { name:"Lucky Coin", coin:792800, strength:792800, crowns:49360, rarity:"one star" },
+          { name:"Golden Prosperity", coin:931540, strength:931540, crowns:50760, rarity:"two star" },
+          { name:"Fireworks Launcher", coin:1090000, strength:1090000, crowns:52160, rarity:"three star" },
+          { name:"Fortune Envelope Spirit", coin:1290000, strength:1290000, crowns:53560, rarity:"four star" },
+          { name:"Celebration Drum", coin:1510000, strength:1510000, crowns:54960, rarity:"four star 2nd" },
+          { name:"Lunar Ember Dragon", coin:1780000, strength:1780000, crowns:56360, rarity:"five star" },
+          { name:"Celestial Ninja", coin:3010000, strength:3010000, crowns:368420, rarity:"one moon" },
+          { name:"Golden Timekepper", coin:11290000, strength:11290000, crowns:734120, rarity:"two moon" },
+          { name:"Golden Mandate", coin:14310000, strength:14310000, crowns:929900, rarity:"three moon" },
+          { name:"Fortune Dragon", coin:30040000, strength:30040000, crowns:1950000, rarity:"secret" }
+        ]
+      },
+      {
+        eggName: "Aquatic Egg",
+        eggImage: "assets/Aquatic Egg.png",
+        pets: [
+          { name:"Tidal Turtle", coin:832440, strength:832440, crowns:52178, rarity:"one star" },
+          { name:"Abyss Turtle", coin:978120, strength:978120, crowns:53578, rarity:"two star" },
+          { name:"Pearl Puffer", coin:1150000, strength:1150000, crowns:54978, rarity:"three star" },
+          { name:"Abyss Whale", coin:1350000, strength:1350000, crowns:56378, rarity:"four star" },
+          { name:"Glacier Ray", coin:1590000, strength:1590000, crowns:57778, rarity:"four star 2nd" },
+          { name:"Abyss Squid", coin:1860000, strength:1860000, crowns:59178, rarity:"five star" },
+          { name:"Timothy the war criminal evolved into aquaman and bought a figther jet to espace the government", coin:3160000, strength:3160000, crowns:386840, rarity:"one moon" },
+          { name:"Trident Warden", coin:11860000, strength:11860000, crowns:770830, rarity:"two moon" },
+          { name:"Emperor of Tides", coin:15020000, strength:15020000, crowns:976400, rarity:"three moon" },
+          { name:"Fortune Dragon", coin:30040000, strength:30040000, crowns:1950000, rarity:"secret" }
+        ]
+      },
+      {
+        eggName: "Lucky Egg",
+        eggImage: "assets/Lucky Egg.png",
+        pets: [
+          { name:"Four Leaf Clover", coin:874060, strength:874060, crowns:55137, rarity:"one star" },
+          { name:"Rainbow Spirit", coin:1030000, strength:1030000, crowns:56536, rarity:"two star" },
+          { name:"Gold Coin", coin:1210000, strength:1210000, crowns:57937, rarity:"three star" },
+          { name:"Lucky Cloud", coin:1420000, strength:1420000, crowns:59337, rarity:"four star" },
+          { name:"Lucky Hat", coin:1670000, strength:1670000, crowns:60737, rarity:"four star 2nd" },
+          { name:"Pot Of Gold Coins", coin:1960000, strength:1960000, crowns:62137, rarity:"five star" },
+          { name:"Lucky Timothy", coin:3320000, strength:3320000, crowns:406180, rarity:"one moon" },
+          { name:"Lucky Princess", coin:12450000, strength:12450000, crowns:809370, rarity:"two moon" },
+          { name:"Lucky Treasure", coin:15770000, strength:15770000, crowns:1030000, rarity:"three moon" },
+          { name:"Fortune Dragon", coin:30040000, strength:30040000, crowns:1950000, rarity:"secret" }
+        ]
+      },
+      {
         eggName: "Flower Egg",
         eggImage: "assets/Flower Egg.png",
         pets: [
@@ -2092,4 +2160,3 @@
   </script>
 </body>
 </html>
-
